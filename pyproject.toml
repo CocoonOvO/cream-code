@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "creamcode"
+version = "0.1.0"
+description = "A modular CLI framework"
+authors = ["creamcode team"]
+readme = "README.md"
+packages = [{include = "creamcode", from = "src"}]
+
+[tool.poetry.dependencies]
+python = ">=3.11"
+click = "^8.1.7"
+pydantic = "^2.5.0"
+httpx = "^0.25.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.0"
+ruff = "^0.1.0"
+mypy = "^1.7.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
