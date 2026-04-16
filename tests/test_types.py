@@ -320,15 +320,23 @@ class TestEvent:
         event2 = Event(name="test_event", source="plugin", data={})
         assert event2.name == "test_event"
 
-    def test_invalid_event_name_raises(self):
-        with pytest.raises(ValueError, match="Invalid event name"):
-            Event(name="123invalid", source="plugin", data={})
+    def test_event_names_are_flexible(self):
+        # Event names are flexible - no validation restrictions
+        # Numbers at start
+        e1 = Event(name="123invalid", source="plugin", data={})
+        assert e1.name == "123invalid"
 
-        with pytest.raises(ValueError, match="Invalid event name"):
-            Event(name="invalid-name", source="plugin", data={})
+        # Dots (common for namespaced events like plugin.loaded)
+        e2 = Event(name="plugin.loaded", source="plugin", data={})
+        assert e2.name == "plugin.loaded"
 
-        with pytest.raises(ValueError, match="Invalid event name"):
-            Event(name="invalid name", source="plugin", data={})
+        # Hyphens
+        e3 = Event(name="invalid-name", source="plugin", data={})
+        assert e3.name == "invalid-name"
+
+        # Spaces
+        e4 = Event(name="invalid name", source="plugin", data={})
+        assert e4.name == "invalid name"
 
 
 class TestPluginType:

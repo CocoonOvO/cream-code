@@ -18,7 +18,7 @@ class LifecycleManager:
         self._startup_callbacks: list[Callback] = []
         self._shutdown_callbacks: list[Callback] = []
         self._state_change_callbacks: list[StateChangeCallback] = []
-        self._lock: asyncio.Lock = None
+        self._lock: asyncio.Lock | None = None
 
     @property
     def state(self) -> LifecycleState:

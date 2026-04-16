@@ -1,15 +1,10 @@
+import asyncio
 from typing import Callable, Awaitable, Any
 from dataclasses import dataclass, field
 from asyncio import Lock
 import logging
 
-
-@dataclass
-class Event:
-    """事件格式 - 最灵活轻量"""
-    name: str
-    source: str
-    data: dict = field(default_factory=dict)
+from ..types import Event
 
 
 Handler = Callable[[Event], Awaitable[None]]
@@ -83,6 +78,3 @@ class EventBus:
         如果指定 source，则只列出该源的订阅
         """
         return list(self._subscribers.keys())
-
-
-import asyncio

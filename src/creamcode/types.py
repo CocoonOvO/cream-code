@@ -4,8 +4,6 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
-import re
-
 
 class MessageRole(str, Enum):
     SYSTEM = "system"
@@ -88,11 +86,7 @@ class ResponseChunk:
 class Event:
     name: str
     source: str
-    data: dict
-
-    def __post_init__(self):
-        if not re.match(r'^[a-zA-Z][a-zA-Z0-9_]*$', self.name):
-            raise ValueError(f"Invalid event name: {self.name}")
+    data: dict = field(default_factory=dict)
 
 
 class PluginType(str, Enum):
