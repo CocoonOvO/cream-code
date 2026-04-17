@@ -3,9 +3,11 @@ from .events import ADAPTER_CREATED, ADAPTER_ERROR, ADAPTER_REQUEST, ADAPTER_RES
 from .registry import AdapterRegistry
 from .retry import RetryConfig, calculate_retry_delay, with_retry
 from .anthropic import AnthropicAdapter
+from .openai import OpenAIAdapter
 
 __all__ = [
     "AnthropicAdapter",
+    "OpenAIAdapter",
     "BaseAdapter",
     "AdapterRegistry",
     "RetryConfig",
