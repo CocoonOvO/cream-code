@@ -5,11 +5,13 @@ from .retry import RetryConfig, calculate_retry_delay, with_retry
 from .anthropic import AnthropicAdapter
 from .openai import OpenAIAdapter
 from .ollama import OllamaAdapter
+from .minimax import MiniMaxAdapter
 
 __all__ = [
     "AnthropicAdapter",
     "OpenAIAdapter",
     "OllamaAdapter",
+    "MiniMaxAdapter",
     "BaseAdapter",
     "AdapterRegistry",
     "RetryConfig",
