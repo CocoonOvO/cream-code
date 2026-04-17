@@ -1,4 +1,5 @@
 import httpx
+import json
 from typing import AsyncIterator
 import logging
 
@@ -14,6 +15,7 @@ from ..types import (
     TokenUsage,
 )
 from .base import BaseAdapter, convert_tools_for_openai
+from ..core.event_bus import EventBus
 
 
 class OllamaAdapter(BaseAdapter):
@@ -24,7 +26,7 @@ class OllamaAdapter(BaseAdapter):
     def __init__(
         self,
         api_key: str = "ollama",
-        event_bus=None,
+        event_bus: EventBus = None,
         model: str = "llama3.2",
         base_url: str = "http://localhost:11434",
         **kwargs,
@@ -176,7 +178,6 @@ class OllamaAdapter(BaseAdapter):
                             )
                         break
 
-                    import json
                     data = json.loads(data_str)
 
                     if data.get("choices"):

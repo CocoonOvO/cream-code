@@ -15,6 +15,7 @@ from ..types import (
     TokenUsage,
 )
 from .base import BaseAdapter, convert_tools_for_openai
+from ..core.event_bus import EventBus
 
 
 class MiniMaxAdapter(BaseAdapter):
@@ -25,7 +26,7 @@ class MiniMaxAdapter(BaseAdapter):
     def __init__(
         self,
         api_key: str,
-        event_bus=None,
+        event_bus: EventBus = None,
         model: str = "MiniMax-Text-01",
         base_url: str = "https://api.minimax.chat/v1",
         **kwargs,

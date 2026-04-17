@@ -14,6 +14,7 @@ from ..types import (
     TokenUsage,
 )
 from .base import BaseAdapter, convert_tools_for_openai
+from ..core.event_bus import EventBus
 
 
 class OpenAIAdapter(BaseAdapter):
@@ -24,7 +25,7 @@ class OpenAIAdapter(BaseAdapter):
     def __init__(
         self,
         api_key: str,
-        event_bus,
+        event_bus: EventBus,
         model: str = "gpt-4o",
         **kwargs,
     ):

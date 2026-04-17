@@ -15,6 +15,7 @@ from ..types import (
     TokenUsage,
 )
 from .base import BaseAdapter, convert_tools_for_anthropic
+from ..core.event_bus import EventBus
 
 
 class AnthropicAdapter(BaseAdapter):
@@ -25,7 +26,7 @@ class AnthropicAdapter(BaseAdapter):
     def __init__(
         self,
         api_key: str,
-        event_bus,
+        event_bus: EventBus,
         model: str = "claude-sonnet-4-20250514",
         max_tokens: int = 8192,
         **kwargs,
