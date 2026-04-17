@@ -2,8 +2,10 @@ from .base import BaseAdapter, convert_tools_for_anthropic, convert_tools_for_op
 from .events import ADAPTER_CREATED, ADAPTER_ERROR, ADAPTER_REQUEST, ADAPTER_RESPONSE
 from .registry import AdapterRegistry
 from .retry import RetryConfig, calculate_retry_delay, with_retry
+from .anthropic import AnthropicAdapter
 
 __all__ = [
+    "AnthropicAdapter",
     "BaseAdapter",
     "AdapterRegistry",
     "RetryConfig",
