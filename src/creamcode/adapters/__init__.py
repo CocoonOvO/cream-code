@@ -4,10 +4,12 @@ from .registry import AdapterRegistry
 from .retry import RetryConfig, calculate_retry_delay, with_retry
 from .anthropic import AnthropicAdapter
 from .openai import OpenAIAdapter
+from .ollama import OllamaAdapter
 
 __all__ = [
     "AnthropicAdapter",
     "OpenAIAdapter",
+    "OllamaAdapter",
     "BaseAdapter",
     "AdapterRegistry",
     "RetryConfig",
