@@ -1,13 +1,11 @@
 from .registry import ToolRegistry
-from .decorator import tool
+from .decorator import tool, set_global_registry, get_global_registry
 from .base import BaseTool
-
-from . import bash
-from . import file
-from . import web
 
 __all__ = [
     "ToolRegistry",
     "tool",
     "BaseTool",
+    "set_global_registry",
+    "get_global_registry",
 ]
