@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import List, Optional
 from datetime import datetime, timedelta
 from pathlib import Path
 import json
@@ -20,7 +19,7 @@ class MemoryTopic:
     content: str
     last_accessed: datetime
     access_count: int = 0
-    related_topics: List[str] = field(default_factory=list)
+    related_topics: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         return {
@@ -45,8 +44,8 @@ class MemoryTopic:
 @dataclass
 class DreamContext:
     """Dream 上下文"""
-    recent_summaries: List[ConversationSummary]
-    current_topics: List[str]
+    recent_summaries: list[ConversationSummary]
+    current_topics: list[str]
     memory_state: dict
 
 
@@ -98,13 +97,13 @@ class LongTermMemory:
             self._check_lock()
         )
 
-    def _extract_keywords(self, text: str, top_n: int = 10) -> List[str]:
+    def _extract_keywords(self, text: str, top_n: int = 10) -> list[str]:
         """从文本中提取关键词"""
         words = re.findall(r'\b[a-zA-Z]{4,}\b', text.lower())
         word_freq = Counter(words)
         return [word for word, _ in word_freq.most_common(top_n)]
 
-    def _find_related_topics(self, keywords: List[str]) -> List[str]:
+    def _find_related_topics(self, keywords: list[str]) -> list[str]:
         """找出与关键词相关的主题"""
         related = []
         for keyword in keywords:
@@ -117,7 +116,7 @@ class LongTermMemory:
         self,
         event_bus: EventBus,
         context: DreamContext,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Dream 整理逻辑
         1. 获取整理锁
@@ -133,7 +132,7 @@ class LongTermMemory:
             all_content = "\n".join([
                 s.summary for s in context.recent_summaries
             ])
-            all_keywords: List[str] = []
+            all_keywords: list[str] = []
             for summary in context.recent_summaries:
                 all_keywords.extend(summary.keywords)
             all_keywords = list(set(all_keywords))
@@ -141,7 +140,7 @@ class LongTermMemory:
             if not all_keywords:
                 all_keywords = self._extract_keywords(all_content)
 
-            updated_topics: List[str] = []
+            updated_topics: list[str] = []
             for keyword in all_keywords:
                 if keyword in self._topics:
                     self._topics[keyword].access_count += 1
@@ -178,8 +177,8 @@ class LongTermMemory:
     async def consolidate(
         self,
         event_bus: EventBus,
-        summaries: List[ConversationSummary],
-    ) -> List[str]:
+        summaries: list[ConversationSummary],
+    ) -> list[str]:
         """
         整合新记忆到长期记忆
         """
@@ -194,7 +193,7 @@ class LongTermMemory:
         self,
         query: str,
         limit: int = 5,
-    ) -> List[MemoryTopic]:
+    ) -> list[MemoryTopic]:
         """
         检索相关记忆
         """

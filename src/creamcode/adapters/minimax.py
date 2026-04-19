@@ -26,7 +26,7 @@ class MiniMaxAdapter(BaseAdapter):
     def __init__(
         self,
         api_key: str,
-        event_bus: EventBus = None,
+        event_bus: EventBus | None = None,
         model: str = "MiniMax-Text-01",
         base_url: str = "https://api.minimax.chat/v1",
         **kwargs,

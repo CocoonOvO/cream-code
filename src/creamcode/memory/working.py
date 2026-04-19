@@ -1,4 +1,6 @@
-from typing import List, Optional
+from __future__ import annotations
+
+from typing import Optional
 from ..types import Message, TokenUsage, Event
 from ..core.event_bus import EventBus
 
@@ -14,13 +16,13 @@ class WorkingMemory:
         max_tokens: int = 100000,
         reserved_tokens: int = 4096,
     ):
-        self._messages: List[Message] = []
+        self._messages: list[Message] = []
         self.max_tokens = max_tokens
         self.reserved_tokens = reserved_tokens
         self._current_usage = TokenUsage(input_tokens=0, output_tokens=0)
 
     @property
-    def messages(self) -> List[Message]:
+    def messages(self) -> list[Message]:
         """获取当前消息列表"""
         return self._messages.copy()
 
@@ -33,11 +35,11 @@ class WorkingMemory:
         """添加消息"""
         self._messages.append(message)
 
-    def get_context(self) -> List[Message]:
+    def get_context(self) -> list[Message]:
         """获取当前上下文（可能已被截断）"""
         return self._messages.copy()
 
-    def get_token_count(self, messages: List[Message]) -> int:
+    def get_token_count(self, messages: list[Message]) -> int:
         """估算消息列表的 Token 数量"""
         return sum(self.estimate_tokens(msg.content) for msg in messages)
 
@@ -47,7 +49,7 @@ class WorkingMemory:
         other = len(text) - chinese_chars
         return chinese_chars // 2 + other // 4
 
-    def truncate(self, max_tokens: int) -> List[Message]:
+    def truncate(self, max_tokens: int) -> list[Message]:
         """
         截断消息以适应 Token 限制
         优先级：系统提示 > 最近消息 > 早期消息
@@ -82,7 +84,7 @@ class WorkingMemory:
         self,
         event_bus: EventBus,
         short_term_summary: Optional[str] = None,
-    ) -> List[Message]:
+    ) -> list[Message]:
         """
         发送消息前的处理
         1. 如果 Token 超限，先触发短期记忆更新

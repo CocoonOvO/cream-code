@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 from ..types import Message, MessageRole, Response, Event
 from .working import WorkingMemory
@@ -38,7 +38,7 @@ class ContextWindowManager:
         self,
         system_prompt: str | None = None,
         query: str | None = None,
-    ) -> List[Message]:
+    ) -> list[Message]:
         """
         准备发送给 AI 的消息列表
         
@@ -51,7 +51,7 @@ class ContextWindowManager:
         Returns:
             准备好的消息列表
         """
-        messages: List[Message] = []
+        messages: list[Message] = []
 
         if system_prompt:
             messages.append(Message(
@@ -96,7 +96,7 @@ class ContextWindowManager:
     async def on_before_agent_call(
         self,
         system_prompt: str | None = None,
-    ) -> List[Message]:
+    ) -> list[Message]:
         """
         Agent 调用前的处理
         检查是否需要触发短期记忆更新

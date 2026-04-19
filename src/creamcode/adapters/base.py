@@ -9,6 +9,7 @@ from ..types import (
     RetryConfig,
     Tool,
 )
+from ..core.event_bus import EventBus
 from .events import ADAPTER_CREATED, ADAPTER_ERROR, ADAPTER_REQUEST, ADAPTER_RESPONSE
 from .retry import with_retry
 
@@ -22,7 +23,7 @@ class BaseAdapter(ABC):
     def __init__(
         self,
         api_key: str,
-        event_bus: Any,
+        event_bus: EventBus,
         model: str | None = None,
         retry_config: RetryConfig | None = None,
     ):

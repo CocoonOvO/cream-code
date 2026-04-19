@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field, asdict
-from typing import List, Optional
+from typing import Optional
 from datetime import datetime
 from pathlib import Path
 import uuid
@@ -19,8 +19,8 @@ class ConversationSummary:
     timestamp: datetime
     summary: str
     message_count: int
-    topics: List[str] = field(default_factory=list)
-    keywords: List[str] = field(default_factory=list)
+    topics: list[str] = field(default_factory=list)
+    keywords: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         return {
@@ -55,19 +55,19 @@ class ShortTermMemory:
         storage_dir: Path | None = None,
         max_summaries: int = 10,
     ):
-        self._summaries: List[ConversationSummary] = []
+        self._summaries: list[ConversationSummary] = []
         self.storage_dir = storage_dir or Path("~/.cache/creamcode/memory/short_term")
         self.max_summaries = max_summaries
 
     @property
-    def summaries(self) -> List[ConversationSummary]:
+    def summaries(self) -> list[ConversationSummary]:
         """获取所有摘要"""
         return self._summaries.copy()
 
     async def generate_summary(
         self,
-        messages: List[Message],
-        topics: List[str] | None = None,
+        messages: list[Message],
+        topics: list[str] | None = None,
     ) -> ConversationSummary:
         """
         从消息列表生成摘要
@@ -86,7 +86,7 @@ class ShortTermMemory:
         )
         return summary
 
-    async def _create_simple_summary(self, messages: List[Message]) -> str:
+    async def _create_simple_summary(self, messages: list[Message]) -> str:
         """简单摘要：提取关键词和高亮消息"""
         if not messages:
             return ""
@@ -106,7 +106,7 @@ class ShortTermMemory:
 
         return summary
 
-    def _extract_keywords(self, messages: List[Message]) -> List[str]:
+    def _extract_keywords(self, messages: list[Message]) -> list[str]:
         """从消息中提取关键词"""
         all_text = " ".join(m.content for m in messages if m.content)
         words = re.findall(r'\b[a-zA-Z]{4,}\b', all_text.lower())
@@ -145,7 +145,7 @@ class ShortTermMemory:
         self,
         query: str,
         limit: int = 3,
-    ) -> List[ConversationSummary]:
+    ) -> list[ConversationSummary]:
         """
         获取与查询相关的摘要
         """
@@ -192,7 +192,7 @@ class ShortTermMemory:
     async def on_session_end(
         self,
         event_bus: EventBus,
-        messages: List[Message],
+        messages: list[Message],
     ) -> ConversationSummary:
         """
         会话结束时调用

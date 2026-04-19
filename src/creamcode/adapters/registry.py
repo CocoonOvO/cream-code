@@ -1,6 +1,7 @@
 from typing import Any
 
 from ..types import Event, RetryConfig
+from ..core.event_bus import EventBus
 from .base import BaseAdapter
 from .events import ADAPTER_CREATED, ADAPTER_ERROR
 
@@ -11,7 +12,7 @@ class AdapterRegistry:
     管理所有可用适配器
     """
 
-    def __init__(self, event_bus: Any):
+    def __init__(self, event_bus: EventBus):
         self._adapters: dict[str, type[BaseAdapter]] = {}
         self._instances: dict[str, BaseAdapter] = {}
         self._event_bus = event_bus

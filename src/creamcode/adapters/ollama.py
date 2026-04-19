@@ -26,7 +26,7 @@ class OllamaAdapter(BaseAdapter):
     def __init__(
         self,
         api_key: str = "ollama",
-        event_bus: EventBus = None,
+        event_bus: EventBus | None = None,
         model: str = "llama3.2",
         base_url: str = "http://localhost:11434",
         **kwargs,
