@@ -1,4 +1,4 @@
-from creamcode.tools.registry import ToolRegistry
+from .registry import ToolRegistry
 
 
 def register_builtins(registry: ToolRegistry):

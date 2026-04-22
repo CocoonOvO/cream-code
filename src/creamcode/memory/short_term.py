@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass, field, asdict
-from typing import Optional
 from datetime import datetime
 from pathlib import Path
-import uuid
 import json
 import re
+import uuid
 
 from ..types import Message, MessageRole, Event
 from ..core.event_bus import EventBus
@@ -111,7 +111,6 @@ class ShortTermMemory:
         all_text = " ".join(m.content for m in messages if m.content)
         words = re.findall(r'\b[a-zA-Z]{4,}\b', all_text.lower())
         
-        from collections import Counter
         word_freq = Counter(words)
         keywords = [word for word, _ in word_freq.most_common(5)]
         return keywords

@@ -199,7 +199,7 @@ class LongTermMemory:
         """
         query_words = set(self._extract_keywords(query.lower()))
 
-        scored: List[tuple[int, MemoryTopic]] = []
+        scored: list[tuple[int, MemoryTopic]] = []
         for topic in self._topics.values():
             score = 0
             if topic.name in query_words:

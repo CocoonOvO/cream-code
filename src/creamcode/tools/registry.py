@@ -1,8 +1,8 @@
 from typing import Callable, Any
 import logging
 
-from creamcode.core.event_bus import EventBus
-from creamcode.types import Tool, ToolResult, Event
+from ..core.event_bus import EventBus
+from ..types import Tool, ToolResult, Event
 
 
 class ToolNotFoundError(Exception):

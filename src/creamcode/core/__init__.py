@@ -1,12 +1,12 @@
-from creamcode.core.lifecycle import LifecycleManager, LifecycleState
-from creamcode.core.event_bus import EventBus
-from creamcode.core.plugin_manager import (
+from .lifecycle import LifecycleManager, LifecycleState
+from .event_bus import EventBus
+from .plugin_manager import (
     Plugin,
     PluginManager,
     PluginLoadError,
     PluginDependencyError,
 )
-from creamcode.core.cli_framework import (
+from .cli_framework import (
     CommandInfo,
     CLIRegistry,
     CLIApp,

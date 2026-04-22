@@ -8,12 +8,12 @@ R = TypeVar('R')
 _global_registry = None
 
 
-def set_global_registry(registry) -> None:
+def set_global_registry(registry: Any) -> None:
     global _global_registry
     _global_registry = registry
 
 
-def get_global_registry():
+def get_global_registry() -> Any:
     return _global_registry
 
 
