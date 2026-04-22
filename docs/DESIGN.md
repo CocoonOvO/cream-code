@@ -30,25 +30,27 @@ creamcode 是一个类似 Claude Code 的轻量级 AI 编程 CLI 工具，使用
 ┌─────────────────────────────────────────────────────────────┐
 │                      creamcode (核心)                        │
 ├─────────────────────────────────────────────────────────────┤
-│  核心生命周期管理                                             │
-│  插件管理器                                                  │
-│  事件总线                                                    │
-│  CLI 框架                                                    │
-│  适配器框架（不包含具体适配器实现）                              │
+│  core/                                                    │
+│    lifecycle.py      - 生命周期管理                          │
+│    event_bus.py     - 事件总线                              │
+│    plugin_manager.py - 插件管理器                            │
+│    cli_framework.py - CLI 框架                              │
+├─────────────────────────────────────────────────────────────┤
+│  adapters/                                                │
+│    base.py          - 适配器基类和工具转换                    │
+│    anthropic.py/openai.py/ollama.py/minimax.py            │
+├─────────────────────────────────────────────────────────────┤
+│  tools/           - 工具注册表和内置工具                      │
+│  memory/          - 三级记忆系统                            │
+│  skills/          - Skill 加载和匹配                        │
+│  mcp/             - MCP 客户端                             │
 └─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
+                               │
+                               ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                       系统插件                                │
-│  event-bus | adapter-core | cli-core | tool-system          │
-│  memory-system | skill-system | mcp-client                  │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                       用户插件                                │
-│  adapter-anthropic | adapter-openai | adapter-ollama        │
-│  adapter-minimax | 其他扩展                                  │
+│                       用户插件 (plugins/)                    │
+│  system/  - 系统级插件（可扩展核心功能）                       │
+│  user/    - 用户自定义插件                                  │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -59,48 +61,62 @@ creamcode/
 ├── src/creamcode/
 │   ├── __init__.py
 │   ├── main.py                 # 入口
+│   ├── app.py                  # Application 引导类
+│   ├── types.py                # 核心类型定义
 │   ├── core/                   # 核心模块
 │   │   ├── __init__.py
 │   │   ├── lifecycle.py        # 生命周期管理
 │   │   ├── plugin_manager.py   # 插件管理器
 │   │   ├── event_bus.py        # 事件总线
-│   │   ├── cli_framework.py    # CLI 框架
-│   │   └── adapter_framework.py # 适配器框架
-│   ├── types.py                # 核心类型定义
-│   └── utils.py                # 工具函数
-│
-├── plugins/
-│   ├── system/                 # 系统插件（必有）
+│   │   └── cli_framework.py    # CLI 框架
+│   ├── adapters/              # 适配器
 │   │   ├── __init__.py
-│   │   ├── event_bus.py        # (核心内置)
-│   │   ├── adapter_core.py     # 适配器框架
-│   │   ├── cli_core.py         # CLI 框架
-│   │   ├── tool_system.py      # 工具系统
-│   │   ├── memory_system.py    # 记忆系统
-│   │   ├── skill_system.py     # Skill 系统
-│   │   └── mcp_client.py       # MCP 客户端
-│   │
-│   └── user/                   # 用户插件（可选）
+│   │   ├── base.py            # 适配器基类
+│   │   ├── registry.py        # 适配器注册表
+│   │   ├── events.py          # 事件常量
+│   │   ├── retry.py           # 重试机制
+│   │   ├── anthropic.py       # Claude 适配器
+│   │   ├── openai.py          # GPT 适配器
+│   │   ├── ollama.py          # Ollama 适配器
+│   │   └── minimax.py         # MiniMax 适配器
+│   ├── tools/                 # 工具系统
+│   │   ├── __init__.py
+│   │   ├── registry.py       # 工具注册表
+│   │   ├── decorator.py       # @tool 装饰器
+│   │   ├── base.py           # BaseTool 抽象类
+│   │   ├── bash.py           # Bash 工具
+│   │   ├── file.py           # File 工具
+│   │   ├── web.py            # Web 工具
+│   │   └── builtins.py       # 内置工具注册
+│   ├── memory/                # 记忆系统
+│   │   ├── __init__.py
+│   │   ├── working.py       # 工作记忆
+│   │   ├── short_term.py     # 短期记忆
+│   │   ├── long_term.py      # 长期记忆
+│   │   └── context.py        # 上下文管理
+│   ├── skills/               # Skill 系统
+│   │   ├── __init__.py
+│   │   ├── skill.py
+│   │   ├── loader.py
+│   │   ├── matcher.py
+│   │   └── registry.py
+│   └── mcp/                  # MCP 客户端
+│       ├── __init__.py
+│       ├── protocol.py
+│       ├── client.py
+│       ├── tool_adapter.py
+│       └── manager.py
+│
+├── plugins/                  # 插件目录
+│   ├── system/              # 系统插件（扩展核心功能）
+│   │   └── __init__.py
+│   └── user/                # 用户插件
 │       └── __init__.py
 │
-├── adapters/                   # 适配器插件（用户插件）
-│   ├── __init__.py
-│   ├── anthropic.py            # Claude 适配器
-│   ├── openai.py              # GPT 适配器
-│   ├── ollama.py              # Ollama 适配器
-│   └── minimax.py             # MiniMax 适配器（示例）
-│
-├── skills/                     # Skill 文件目录
-│   └── README.md
-│
-├── docs/                       # 文档
-│   └── DESIGN.md              # 本文档
-│
-├── tests/                      # 测试
-│
-└── examples/                   # 示例
-    ├── plugin_example/        # 插件示例
-    └── skill_example/         # Skill 示例
+├── tests/                    # 测试
+├── docs/                     # 文档
+│   └── DESIGN.md
+└── pyproject.toml
 ```
 
 ---
@@ -181,6 +197,8 @@ class CLIRegistry:
 
 ## 4. 系统插件
 
+> 注意：核心功能已在 `src/creamcode/` 中实现。`plugins/system/` 目录用于扩展核心功能。
+
 ### 4.1 加载顺序
 
 系统插件按以下顺序加载：
@@ -196,6 +214,8 @@ class CLIRegistry:
 | 7 | mcp-client | MCP 客户端 |
 
 ### 4.2 系统插件详情
+
+系统插件是可扩展的核心功能模块。开发者可以通过在 `plugins/system/` 创建插件来扩展核心功能。
 
 #### event-bus
 - 提供事件发布/订阅

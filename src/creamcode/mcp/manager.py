@@ -1,15 +1,16 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
-
-from ..tools.registry import ToolRegistry
+from typing import TYPE_CHECKING, Any
 
 from .protocol import MCPServerConfig
 from .client import MCPClient
 from .tool_adapter import MCPToolAdapter
 
 import inspect
+
+if TYPE_CHECKING:
+    from ..tools.registry import ToolRegistry
 
 
 class MCPServerManager:

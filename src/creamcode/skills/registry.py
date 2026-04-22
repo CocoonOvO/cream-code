@@ -1,19 +1,39 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 from .loader import SkillLoader, SkillLoadError
 from .matcher import SkillMatcher
 from .skill import Skill
 
+if TYPE_CHECKING:
+    from ..core.event_bus import EventBus
+    from ..tools.registry import ToolRegistry
+
 
 class SkillRegistry:
-    def __init__(self, skills_dir: Path | None = None) -> None:
+    def __init__(
+        self,
+        skills_dir: Path | None = None,
+        event_bus: 'EventBus | None' = None,
+        tool_registry: 'ToolRegistry | None' = None,
+    ) -> None:
         if skills_dir is None:
             skills_dir = Path.home() / ".creamcode" / "skills"
         self.loader = SkillLoader(skills_dir)
         self.matcher = SkillMatcher([])
         self._skills: dict[str, Skill] = {}
+        self._event_bus = event_bus
+        self._tool_registry = tool_registry
+
+    def set_event_bus(self, event_bus: 'EventBus') -> None:
+        """Set the event bus for skill events"""
+        self._event_bus = event_bus
+
+    def set_tool_registry(self, tool_registry: 'ToolRegistry') -> None:
+        """Set the tool registry for skill tool access"""
+        self._tool_registry = tool_registry
 
     def load_all(self) -> None:
         discovered = self.loader.discover_skills()
@@ -41,3 +61,41 @@ class SkillRegistry:
             return reloaded
         except SkillLoadError:
             return None
+
+    def get_skill_instructions(self, name: str, context: dict[str, Any] | None = None) -> str | None:
+        """
+        Get skill instructions, optionally enhanced with context.
+        
+        Args:
+            name: Skill name
+            context: Optional context (available_tools, memory_state, etc.)
+        """
+        skill = self._skills.get(name)
+        if skill is None:
+            return None
+
+        instructions = skill.instructions
+
+        if context and self._event_bus:
+            from ..types import Event
+            import asyncio
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    asyncio.create_task(self._publish_skill_accessed(skill.name))
+                else:
+                    loop.run_until_complete(self._publish_skill_accessed(skill.name))
+            except RuntimeError:
+                pass
+
+        return instructions
+
+    async def _publish_skill_accessed(self, skill_name: str) -> None:
+        """Publish event when a skill is accessed"""
+        if self._event_bus:
+            from ..types import Event
+            await self._event_bus.publish(Event(
+                name="skill.accessed",
+                source="skill_registry",
+                data={"skill_name": skill_name}
+            ))
