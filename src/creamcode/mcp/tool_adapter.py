@@ -3,8 +3,8 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from creamcode.types import Tool
-from creamcode.tools.registry import ToolRegistry
+from ..types import Tool
+from ..tools.registry import ToolRegistry
 
 from .client import MCPClient
 

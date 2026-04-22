@@ -3,11 +3,13 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from creamcode.tools.registry import ToolRegistry
+from ..tools.registry import ToolRegistry
 
 from .protocol import MCPServerConfig
 from .client import MCPClient
 from .tool_adapter import MCPToolAdapter
+
+import inspect
 
 
 class MCPServerManager:
@@ -105,7 +107,6 @@ class MCPServerManager:
             client = self._servers[name]
             if client.is_connected:
                 try:
-                    import inspect
                     if inspect.iscoroutinefunction(client.list_tools):
                         raise RuntimeError("get_all_tools should not be called when servers have async list_tools - use get_all_tools_async instead")
                     tools = client.list_tools()

@@ -1,5 +1,3 @@
-from typing import Optional
-
 from ..types import Message, MessageRole, Response, Event
 from .working import WorkingMemory
 from .short_term import ShortTermMemory
