@@ -70,11 +70,9 @@ class Application:
         self.lifecycle = LifecycleManager()
         
         await self.event_bus.subscribe("command.registered", self._on_command_registered)
+        await self.event_bus.subscribe("plugin.commands_registering", self._on_plugin_commands_registering)
         
-        self.plugin_manager = PluginManager(
-            self.event_bus, 
-            self.cli_registry
-        )
+        self.plugin_manager = PluginManager(self.event_bus)
         
         self.adapter_registry = AdapterRegistry(self.event_bus)
         
@@ -100,6 +98,12 @@ class Application:
         self._logger.debug(
             f"Command registered via event: {event.data.get('namespace')}/{event.data.get('name')}"
         )
+
+    async def _on_plugin_commands_registering(self, event: Event) -> None:
+        """Handle plugin commands registration event - actually register commands to CLI"""
+        plugin = event.data.get("plugin")
+        if plugin and self.cli_registry:
+            plugin.register_commands(self.cli_registry)
 
     async def _setup_memory(self) -> None:
         """Initialize memory system"""

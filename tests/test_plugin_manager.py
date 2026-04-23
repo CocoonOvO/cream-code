@@ -66,8 +66,7 @@ class TestPluginManagerBasic:
     @pytest.mark.asyncio
     async def test_load_plugin(self):
         bus = EventBus()
-        cli = CLIRegistry()
-        manager = PluginManager(bus, cli)
+        manager = PluginManager(bus)
 
         with tempfile.TemporaryDirectory() as temp_dir:
             test_plugins_dir = Path(temp_dir) / "plugins"
@@ -100,8 +99,7 @@ class SimplePlugin(Plugin):
     @pytest.mark.asyncio
     async def test_get_plugin(self):
         bus = EventBus()
-        cli = CLIRegistry()
-        manager = PluginManager(bus, cli)
+        manager = PluginManager(bus)
 
         with tempfile.TemporaryDirectory() as temp_dir:
             test_plugins_dir = Path(temp_dir) / "plugins"
@@ -127,8 +125,7 @@ class SimplePlugin(Plugin):
     @pytest.mark.asyncio
     async def test_get_plugin_not_found(self):
         bus = EventBus()
-        cli = CLIRegistry()
-        manager = PluginManager(bus, cli)
+        manager = PluginManager(bus)
 
         plugin = manager.get_plugin("nonexistent")
         assert plugin is None
@@ -136,8 +133,7 @@ class SimplePlugin(Plugin):
     @pytest.mark.asyncio
     async def test_list_plugins(self):
         bus = EventBus()
-        cli = CLIRegistry()
-        manager = PluginManager(bus, cli)
+        manager = PluginManager(bus)
 
         with tempfile.TemporaryDirectory() as temp_dir:
             test_plugins_dir = Path(temp_dir) / "plugins"
@@ -179,8 +175,7 @@ class AnotherPlugin(Plugin):
     @pytest.mark.asyncio
     async def test_get_plugin_state(self):
         bus = EventBus()
-        cli = CLIRegistry()
-        manager = PluginManager(bus, cli)
+        manager = PluginManager(bus)
 
         with tempfile.TemporaryDirectory() as temp_dir:
             test_plugins_dir = Path(temp_dir) / "plugins"
@@ -206,8 +201,7 @@ class TestPluginManagerEnableDisable:
     @pytest.mark.asyncio
     async def test_enable_plugin(self):
         bus = EventBus()
-        cli = CLIRegistry()
-        manager = PluginManager(bus, cli)
+        manager = PluginManager(bus)
 
         with tempfile.TemporaryDirectory() as temp_dir:
             test_plugins_dir = Path(temp_dir) / "plugins"
@@ -235,8 +229,7 @@ class SimplePlugin(Plugin):
     @pytest.mark.asyncio
     async def test_disable_plugin(self):
         bus = EventBus()
-        cli = CLIRegistry()
-        manager = PluginManager(bus, cli)
+        manager = PluginManager(bus)
 
         with tempfile.TemporaryDirectory() as temp_dir:
             test_plugins_dir = Path(temp_dir) / "plugins"
@@ -265,8 +258,7 @@ class SimplePlugin(Plugin):
     @pytest.mark.asyncio
     async def test_enable_twice_is_idempotent(self):
         bus = EventBus()
-        cli = CLIRegistry()
-        manager = PluginManager(bus, cli)
+        manager = PluginManager(bus)
 
         with tempfile.TemporaryDirectory() as temp_dir:
             test_plugins_dir = Path(temp_dir) / "plugins"
@@ -296,8 +288,7 @@ class TestPluginManagerDependency:
     @pytest.mark.asyncio
     async def test_dependency_satisfied(self):
         bus = EventBus()
-        cli = CLIRegistry()
-        manager = PluginManager(bus, cli)
+        manager = PluginManager(bus)
 
         with tempfile.TemporaryDirectory() as temp_dir:
             test_plugins_dir = Path(temp_dir) / "plugins"
@@ -338,8 +329,7 @@ class DependentPlugin(Plugin):
     @pytest.mark.asyncio
     async def test_dependency_not_satisfied(self):
         bus = EventBus()
-        cli = CLIRegistry()
-        manager = PluginManager(bus, cli)
+        manager = PluginManager(bus)
 
         with tempfile.TemporaryDirectory() as temp_dir:
             test_plugins_dir = Path(temp_dir) / "plugins"
@@ -363,8 +353,7 @@ class DependentPlugin(Plugin):
     @pytest.mark.asyncio
     async def test_circular_dependency_handled(self):
         bus = EventBus()
-        cli = CLIRegistry()
-        manager = PluginManager(bus, cli)
+        manager = PluginManager(bus)
 
         with tempfile.TemporaryDirectory() as temp_dir:
             test_plugins_dir = Path(temp_dir) / "plugins"
@@ -404,8 +393,7 @@ class TestPluginManagerUnload:
     @pytest.mark.asyncio
     async def test_unload_plugin(self):
         bus = EventBus()
-        cli = CLIRegistry()
-        manager = PluginManager(bus, cli)
+        manager = PluginManager(bus)
 
         with tempfile.TemporaryDirectory() as temp_dir:
             test_plugins_dir = Path(temp_dir) / "plugins"
@@ -432,8 +420,7 @@ class SimplePlugin(Plugin):
     @pytest.mark.asyncio
     async def test_unload_twice_is_safe(self):
         bus = EventBus()
-        cli = CLIRegistry()
-        manager = PluginManager(bus, cli)
+        manager = PluginManager(bus)
 
         with tempfile.TemporaryDirectory() as temp_dir:
             test_plugins_dir = Path(temp_dir) / "plugins"
@@ -462,8 +449,7 @@ class TestPluginManagerReload:
     @pytest.mark.asyncio
     async def test_reload_plugin(self):
         bus = EventBus()
-        cli = CLIRegistry()
-        manager = PluginManager(bus, cli)
+        manager = PluginManager(bus)
 
         with tempfile.TemporaryDirectory() as temp_dir:
             test_plugins_dir = Path(temp_dir) / "plugins"
@@ -502,8 +488,7 @@ class SimplePlugin(Plugin):
     @pytest.mark.asyncio
     async def test_reload_preserves_enabled_state(self):
         bus = EventBus()
-        cli = CLIRegistry()
-        manager = PluginManager(bus, cli)
+        manager = PluginManager(bus)
 
         with tempfile.TemporaryDirectory() as temp_dir:
             test_plugins_dir = Path(temp_dir) / "plugins"
@@ -535,8 +520,7 @@ class TestPluginManagerExceptionHandling:
     @pytest.mark.asyncio
     async def test_load_failure_marks_plugin_as_error(self):
         bus = EventBus()
-        cli = CLIRegistry()
-        manager = PluginManager(bus, cli)
+        manager = PluginManager(bus)
 
         with tempfile.TemporaryDirectory() as temp_dir:
             test_plugins_dir = Path(temp_dir) / "plugins"
@@ -568,8 +552,7 @@ class BrokenPlugin(Plugin):
     @pytest.mark.asyncio
     async def test_load_failure_does_not_affect_other_plugins(self):
         bus = EventBus()
-        cli = CLIRegistry()
-        manager = PluginManager(bus, cli)
+        manager = PluginManager(bus)
 
         with tempfile.TemporaryDirectory() as temp_dir:
             test_plugins_dir = Path(temp_dir) / "plugins"
@@ -617,8 +600,7 @@ class TestPluginManagerLoadFromDir:
     @pytest.mark.asyncio
     async def test_load_plugins_from_dir(self):
         bus = EventBus()
-        cli = CLIRegistry()
-        manager = PluginManager(bus, cli)
+        manager = PluginManager(bus)
 
         with tempfile.TemporaryDirectory() as temp_dir:
             test_plugins_dir = Path(temp_dir) / "plugins"
@@ -654,8 +636,7 @@ class BPlugin(Plugin):
     @pytest.mark.asyncio
     async def test_load_plugins_from_nonexistent_dir(self):
         bus = EventBus()
-        cli = CLIRegistry()
-        manager = PluginManager(bus, cli)
+        manager = PluginManager(bus)
 
         count = await manager.load_plugins_from_dir(Path("/nonexistent/path"))
         assert count == 0
@@ -665,8 +646,7 @@ class TestPluginManagerEvents:
     @pytest.mark.asyncio
     async def test_plugin_loaded_event(self):
         bus = EventBus()
-        cli = CLIRegistry()
-        manager = PluginManager(bus, cli)
+        manager = PluginManager(bus)
 
         received = []
 
@@ -699,8 +679,7 @@ class SimplePlugin(Plugin):
     @pytest.mark.asyncio
     async def test_plugin_enabled_event(self):
         bus = EventBus()
-        cli = CLIRegistry()
-        manager = PluginManager(bus, cli)
+        manager = PluginManager(bus)
 
         received = []
 
@@ -734,8 +713,7 @@ class SimplePlugin(Plugin):
     @pytest.mark.asyncio
     async def test_plugin_disabled_event(self):
         bus = EventBus()
-        cli = CLIRegistry()
-        manager = PluginManager(bus, cli)
+        manager = PluginManager(bus)
 
         received = []
 
@@ -770,8 +748,7 @@ class SimplePlugin(Plugin):
     @pytest.mark.asyncio
     async def test_plugin_unloaded_event(self):
         bus = EventBus()
-        cli = CLIRegistry()
-        manager = PluginManager(bus, cli)
+        manager = PluginManager(bus)
 
         received = []
 

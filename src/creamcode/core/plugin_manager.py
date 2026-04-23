@@ -66,9 +66,8 @@ class PluginManager:
     负责插件的加载、卸载、启用、禁用、热重载
     """
 
-    def __init__(self, event_bus: EventBus, cli_registry: 'CLIRegistry'):
+    def __init__(self, event_bus: EventBus):
         self.event_bus = event_bus
-        self.cli = cli_registry
         self._plugins: dict[str, Plugin] = {}
         self._metadata: dict[str, PluginMetadata] = {}
         self._states: dict[str, str] = {}
@@ -144,7 +143,11 @@ class PluginManager:
 
         await plugin.on_unload()
 
-        self.cli.unregister_namespace(name)
+        await self.event_bus.publish(Event(
+            name="plugin.commands_unregistered",
+            source="plugin_manager",
+            data={"name": name}
+        ))
 
         del self._plugins[name]
         del self._metadata[name]
@@ -173,7 +176,12 @@ class PluginManager:
         if not self._check_dependencies(metadata):
             raise PluginDependencyError(f"Dependencies not satisfied for {name}")
 
-        plugin.register_commands(self.cli)
+        await self.event_bus.publish(Event(
+            name="plugin.commands_registering",
+            source="plugin_manager",
+            data={"name": name, "plugin": plugin}
+        ))
+        
         await plugin.on_enable()
         self._states[name] = "enabled"
 
@@ -195,7 +203,11 @@ class PluginManager:
         if self._states.get(name) != "enabled":
             return
 
-        self.cli.unregister_namespace(name)
+        await self.event_bus.publish(Event(
+            name="plugin.commands_unregistering",
+            source="plugin_manager",
+            data={"name": name}
+        ))
         await plugin.on_disable()
         self._states[name] = "disabled"
 
