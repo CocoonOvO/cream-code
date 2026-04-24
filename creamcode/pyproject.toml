@@ -1,3 +1,6 @@
+[tool.poetry.scripts]
+creamcode = "creamcode.main:main"
+
 [tool.poetry]
 name = "creamcode"
 version = "0.1.0"
