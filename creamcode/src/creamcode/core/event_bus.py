@@ -1,80 +1,118 @@
-import asyncio
-from typing import Callable, Awaitable, Any
-from dataclasses import dataclass, field
-from asyncio import Lock
-import logging
+from __future__ import annotations
 
-from ..types import Event
+from functools import wraps
+from typing import Any, Awaitable, Callable
 
 
-Handler = Callable[[Event], Awaitable[None]]
+class Event:
+    """事件对象 - 可变，插件链式处理"""
+
+    name: str
+    data: dict[str, Any]
+    metadata: dict[str, Any]
+
+    def __init__(self, name: str, data: dict = None, metadata: dict = None):
+        self.name = name
+        self.data = data or {}
+        self.metadata = metadata or {}
+
+    def with_data(self, **kwargs) -> Event:
+        return Event(self.name, {**self.data, **kwargs}, self.metadata)
+
+    def with_metadata(self, **kwargs) -> Event:
+        return Event(self.name, self.data, {**self.metadata, **kwargs})
+
+
+EventHandler = Callable[[Event], Awaitable[Event | None]]
+
+
+class EventSpace:
+    """事件空间，如 app、session"""
+
+    def __init__(self, name: str, event_bus: EventBus):
+        self.space_name = name
+        self._event_bus = event_bus
+
+    def event(self, sub_name: str, priority: int = 0):
+        """发射事件装饰器，如 @app.event("starting")"""
+        full_name = f"{self.space_name}.{sub_name}"
+        return self._event_bus._emit_decorator(full_name, priority)
+
+    def path(self, sub_name: str) -> str:
+        """获取完整路径"""
+        return f"{self.space_name}.{sub_name}"
 
 
 class EventBus:
-    """
-    事件总线 - 插件间通信核心
-    提供事件的发布/订阅机制
-    """
+    """事件总线 - 单例模式"""
 
-    def __init__(self):
-        self._subscribers: dict[str, list[Handler]] = {}
-        self._lock = Lock()
-        self._logger = logging.getLogger("creamcode.event_bus")
+    _instance: EventBus | None = None
 
-    async def publish(self, event: Event) -> None:
-        """
-        发布事件
-        所有订阅该事件的处理器都会被调用
-        """
-        handlers = self.get_handlers(event.name)
-        self._logger.debug(
-            f"Publishing event '{event.name}' from '{event.source}' to {len(handlers)} handler(s)"
-        )
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance._handlers: dict[str, list[tuple[int, EventHandler]]] = {}
+            cls._instance.event_spaces: dict[str, EventSpace] = {}
+        return cls._instance
 
-        if not handlers:
-            return
+    def create_space(self, name: str) -> EventSpace:
+        """创建事件空间"""
+        if name in self.event_spaces:
+            return self.event_spaces[name]
+        space = EventSpace(name, self)
+        self.event_spaces[name] = space
+        return space
 
-        async def safe_call(handler: Handler) -> None:
-            try:
-                await handler(event)
-            except Exception as e:
-                self._logger.error(
-                    f"Handler error for event '{event.name}': {e}", exc_info=True
-                )
+    def get_space(self, name: str) -> EventSpace | None:
+        """获取事件空间"""
+        return self.event_spaces.get(name)
 
-        await asyncio.gather(*[safe_call(h) for h in handlers])
+    def on(self, event_path: str, priority: int = 0):
+        """订阅装饰器，如 @event_bus.on("app.starting")"""
+        def decorator(func: EventHandler):
+            self.subscribe(event_path, func, priority)
+            return func
+        return decorator
 
-    async def subscribe(self, event_name: str, handler: Handler) -> None:
-        """
-        订阅事件
-        """
-        async with self._lock:
-            if event_name not in self._subscribers:
-                self._subscribers[event_name] = []
-            if handler not in self._subscribers[event_name]:
-                self._subscribers[event_name].append(handler)
+    subscribe = on
 
-    async def unsubscribe(self, event_name: str, handler: Handler) -> None:
-        """
-        取消订阅
-        """
-        async with self._lock:
-            if event_name in self._subscribers:
-                if handler in self._subscribers[event_name]:
-                    self._subscribers[event_name].remove(handler)
-                if not self._subscribers[event_name]:
-                    del self._subscribers[event_name]
+    def subscribe(self, event_path: str, handler: EventHandler, priority: int = 0) -> None:
+        if event_path not in self._handlers:
+            self._handlers[event_path] = []
+        self._handlers[event_path].append((priority, handler))
+        self._handlers[event_path].sort(key=lambda x: x[0])
 
-    def get_handlers(self, event_name: str) -> list[Handler]:
-        """获取事件的所有处理器"""
-        handlers = self._subscribers.get(event_name, []).copy()
-        if event_name != "*":
-            handlers.extend(self._subscribers.get("*", []))
-        return handlers
+    def unsubscribe(self, event_path: str, handler: EventHandler) -> None:
+        if event_path in self._handlers:
+            self._handlers[event_path] = [
+                (p, h) for p, h in self._handlers[event_path] if h != handler
+            ]
 
-    def list_subscriptions(self, source: str | None = None) -> list[str]:
-        """
-        列出所有订阅
-        如果指定 source，则只列出该源的订阅
-        """
-        return list(self._subscribers.keys())
+    async def publish(self, event: Event) -> Event | None:
+        handlers = self._handlers.get(event.name, [])
+        result = event
+        for _, handler in handlers:
+            result = await handler(result)
+            if result is None:
+                return None
+        return result
+
+    def _emit_decorator(self, event_name: str, priority: int = 0):
+        """发射装饰器工厂"""
+
+        def decorator(func):
+            @wraps(func)
+            async def wrapper(self, *args, **kwargs):
+                eb = getattr(self, "event_bus", None)
+                result = await func(self, *args, **kwargs)
+                if eb:
+                    await eb.publish(Event(event_name))
+                return result
+
+            return wrapper
+
+        return decorator
+
+
+event_bus = EventBus()
+on = event_bus.on

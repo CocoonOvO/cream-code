@@ -1,65 +1,90 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from abc import ABC
+from typing import Any
 
-if TYPE_CHECKING:
-    from ..core.event_bus import EventBus
-    from ..tools.registry import ToolRegistry
-    from ..memory.context import ContextWindowManager
-    from ..agent import BaseAgent
+from ..core.event_bus import event_bus as _event_bus, on as _on
 
 
-class ToolPluginInterface(ABC):
-    """工具插件接口"""
+class CoreEvents:
+    """核心事件常量表 - 仅开发时参考，运行时无作用"""
 
-    @abstractmethod
-    def register_tools(self, registry: ToolRegistry) -> None:
-        """注册工具到注册表"""
-        pass
+    APP_STARTING = "app.starting"
+    APP_STARTED = "app.started"
+    APP_SHUTDOWN = "app.shutdown"
+    APP_STOPPED = "app.stopped"
 
-    @abstractmethod
-    def unregister_tools(self, registry: ToolRegistry) -> None:
-        """从注册表注销工具"""
-        pass
+    SESSION_START = "session.start"
+    SESSION_END = "session.end"
+
+    MESSAGE_INCOMING = "message.incoming"
+    MESSAGE_OUTGOING = "message.outgoing"
+    MESSAGE_PROCESSED = "message.processed"
+
+    AGENT_THINKING = "agent.thinking"
+    AGENT_PROMPT = "agent.prompt"
+    AGENT_RESPONSE = "agent.response"
+    AGENT_RESULT = "agent.result"
+
+    TOOL_CALL = "tool.call"
+    TOOL_RESULT = "tool.result"
+
+    PLUGIN_LOADED = "plugin.loaded"
+    PLUGIN_ENABLED = "plugin.enabled"
+    PLUGIN_DISABLED = "plugin.disabled"
+    PLUGIN_UNLOADED = "plugin.unloaded"
 
 
-class MemoryPluginInterface(ABC):
-    """记忆插件接口"""
+class ServiceRegistry:
+    """服务注册表"""
 
-    @abstractmethod
-    def create_context_manager(
+    def __init__(self):
+        self._services: dict[str, Any] = {}
+
+    def register(self, name: str, service: Any) -> None:
+        self._services[name] = service
+
+    def get(self, name: str) -> Any | None:
+        return self._services.get(name)
+
+    def list_services(self) -> list[str]:
+        return list(self._services.keys())
+
+
+class PluginContext:
+    """插件上下文"""
+
+    def __init__(
         self,
-        event_bus: EventBus,
-        config: dict | None = None,
-    ) -> ContextWindowManager:
-        """创建上下文管理器"""
-        pass
+        event_bus: Any,
+        config: dict[str, Any],
+        services: ServiceRegistry,
+    ):
+        self.event_bus = event_bus
+        self.config = config
+        self.services = services
 
 
-class AgentPluginInterface(ABC):
-    """Agent 插件接口"""
+class Plugin(ABC):
+    """插件基类"""
 
-    @abstractmethod
-    def create_agent(
-        self,
-        event_bus: EventBus,
-        tool_registry: ToolRegistry,
-        context_manager: ContextWindowManager,
-    ) -> BaseAgent:
-        """创建 Agent 实例"""
-        pass
+    name: str = ""
+    version: str = "0.1.0"
+    priority: int = 0
+    depends_on: list[str] = []
 
+    _context: PluginContext | None = None
+    _enabled: bool = False
 
-class AdapterPluginInterface(ABC):
-    """适配器插件接口"""
+    async def on_load(self, context: PluginContext) -> None:
+        self._context = context
 
-    @abstractmethod
-    def get_adapter_class(self):
-        """获取适配器类"""
-        pass
+    async def on_enable(self) -> None:
+        self._enabled = True
 
-    @abstractmethod
-    def get_adapter_name(self) -> str:
-        """获取适配器名称"""
-        pass
+    async def on_disable(self) -> None:
+        self._enabled = False
+
+    async def on_unload(self) -> None:
+        self._enabled = False
+        self._context = None

@@ -82,11 +82,7 @@ class ResponseChunk:
     is_final: bool = False
 
 
-@dataclass
-class Event:
-    name: str
-    source: str
-    data: dict = field(default_factory=dict)
+from .core.event_bus import Event
 
 
 class PluginType(str, Enum):
