@@ -1,12 +1,14 @@
-from abc import ABC, abstractmethod
+from __future__ import annotations
+
+from abc import ABC
 from pathlib import Path
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING
 
 import importlib.util
 import logging
 
 from ..types import PluginType, PluginMetadata
-from .event_bus import EventBus, Event
+from .event_bus import event_bus
 
 if TYPE_CHECKING:
     from .cli_framework import CLIRegistry
@@ -31,7 +33,7 @@ class Plugin(ABC):
     depends_on: list[str] = []
     description: str = ""
 
-    def __init__(self, event_bus: EventBus):
+    def __init__(self, event_bus=None):
         self.event_bus = event_bus
         self._enabled = False
 
@@ -55,7 +57,7 @@ class Plugin(ABC):
         """插件卸载时调用"""
         pass
 
-    def register_commands(self, cli: 'CLIRegistry'):
+    def register_commands(self, cli: "CLIRegistry"):
         """注册 CLI 命令"""
         pass
 
@@ -66,22 +68,18 @@ class PluginManager:
     负责插件的加载、卸载、启用、禁用、热重载
     """
 
-    def __init__(self, event_bus: EventBus):
-        self.event_bus = event_bus
+    _plugin = event_bus.create_space("plugin")
+
+    def __init__(self):
         self._plugins: dict[str, Plugin] = {}
         self._metadata: dict[str, PluginMetadata] = {}
         self._states: dict[str, str] = {}
         self._plugin_paths: dict[str, Path] = {}
         self._logger = logging.getLogger("creamcode.plugin_manager")
 
+    @_plugin.event("load")
     async def load_plugin(self, plugin_path: Path) -> Plugin:
-        """
-        加载插件
-        1. 读取插件元数据
-        2. 检查依赖
-        3. 实例化插件
-        4. 调用 on_load
-        """
+        """加载插件"""
         spec = importlib.util.spec_from_file_location("plugin_module", plugin_path)
         if spec is None or spec.loader is None:
             raise PluginLoadError(f"Cannot load plugin from {plugin_path}")
@@ -99,7 +97,7 @@ class PluginManager:
         if plugin_class is None:
             raise PluginLoadError(f"No Plugin class found in {plugin_path}")
 
-        plugin_instance = plugin_class(self.event_bus)
+        plugin_instance = plugin_class()
         metadata = PluginMetadata(
             name=plugin_class.name,
             version=plugin_class.version,
@@ -117,22 +115,13 @@ class PluginManager:
         self._plugin_paths[metadata.name] = plugin_path
 
         await plugin_instance.on_load()
-        await self.event_bus.publish(Event(
-            name="plugin.loaded",
-            source="plugin_manager",
-            data={"name": metadata.name, "version": metadata.version}
-        ))
 
         self._logger.info(f"Loaded plugin: {metadata.name} v{metadata.version}")
         return plugin_instance
 
+    @_plugin.event("unload")
     async def unload_plugin(self, name: str) -> None:
-        """
-        卸载插件
-        1. 调用 on_unload
-        2. 注销 CLI 命令
-        3. 删除插件实例
-        """
+        """卸载插件"""
         if name not in self._plugins:
             return
 
@@ -143,25 +132,14 @@ class PluginManager:
 
         await plugin.on_unload()
 
-        await self.event_bus.publish(Event(
-            name="plugin.commands_unregistered",
-            source="plugin_manager",
-            data={"name": name}
-        ))
-
         del self._plugins[name]
         del self._metadata[name]
         del self._states[name]
         self._plugin_paths.pop(name, None)
 
-        await self.event_bus.publish(Event(
-            name="plugin.unloaded",
-            source="plugin_manager",
-            data={"name": name}
-        ))
-
         self._logger.info(f"Unloaded plugin: {name}")
 
+    @_plugin.event("enable")
     async def enable_plugin(self, name: str) -> None:
         """启用插件"""
         if name not in self._plugins:
@@ -176,23 +154,12 @@ class PluginManager:
         if not self._check_dependencies(metadata):
             raise PluginDependencyError(f"Dependencies not satisfied for {name}")
 
-        await self.event_bus.publish(Event(
-            name="plugin.commands_registering",
-            source="plugin_manager",
-            data={"name": name, "plugin": plugin}
-        ))
-        
         await plugin.on_enable()
         self._states[name] = "enabled"
 
-        await self.event_bus.publish(Event(
-            name="plugin.enabled",
-            source="plugin_manager",
-            data={"name": name}
-        ))
-
         self._logger.info(f"Enabled plugin: {name}")
 
+    @_plugin.event("disable")
     async def disable_plugin(self, name: str) -> None:
         """禁用插件"""
         if name not in self._plugins:
@@ -203,19 +170,8 @@ class PluginManager:
         if self._states.get(name) != "enabled":
             return
 
-        await self.event_bus.publish(Event(
-            name="plugin.commands_unregistering",
-            source="plugin_manager",
-            data={"name": name}
-        ))
         await plugin.on_disable()
         self._states[name] = "disabled"
-
-        await self.event_bus.publish(Event(
-            name="plugin.disabled",
-            source="plugin_manager",
-            data={"name": name}
-        ))
 
         self._logger.info(f"Disabled plugin: {name}")
 
@@ -251,10 +207,7 @@ class PluginManager:
         return self._states.get(name, "error")
 
     async def load_plugins_from_dir(self, plugin_dir: Path) -> int:
-        """
-        从目录加载所有插件
-        返回加载成功的数量
-        """
+        """从目录加载所有插件"""
         if not plugin_dir.exists():
             return 0
 
@@ -262,16 +215,11 @@ class PluginManager:
         plugin_metadata = [
             (f, self._extract_metadata_from_file(f)) for f in plugin_files if f.stem != "__init__"
         ]
-        sorted_plugins = self._topological_sort([m for _, m in plugin_metadata])
 
         loaded_count = 0
-        errors = []
 
         for plugin_file, metadata in plugin_metadata:
             if metadata.name in self._plugins:
-                continue
-
-            if metadata not in sorted_plugins:
                 continue
 
             try:
@@ -279,12 +227,6 @@ class PluginManager:
                 loaded_count += 1
             except (PluginLoadError, PluginDependencyError) as e:
                 self._states[metadata.name] = "error"
-                errors.append((metadata.name, str(e)))
-                await self.event_bus.publish(Event(
-                    name="plugin.error",
-                    source="plugin_manager",
-                    data={"name": metadata.name, "error": str(e)}
-                ))
 
         return loaded_count
 

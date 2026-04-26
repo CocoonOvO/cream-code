@@ -1,7 +1,11 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import Callable, Any
+from typing import Callable
 import argparse
 import sys
+
+from .event_bus import event_bus
 
 
 @dataclass
@@ -70,6 +74,8 @@ class CLIRegistry:
 class CLIApp:
     VERSION = "0.1.0"
 
+    _cli = event_bus.create_space("cli")
+
     def __init__(self, registry: CLIRegistry):
         self.registry = registry
         self._parser = argparse.ArgumentParser(
@@ -81,10 +87,30 @@ class CLIApp:
         self._parser.add_argument("--debug", action="store_true", help="Enable debug mode")
         self._parser.add_argument("command", nargs="*", help="Command to execute")
 
+    @_cli.event("start")
+    async def initialize(self):
+        """CLI 初始化"""
+        pass
+
+    @_cli.event("command")
+    async def execute(self, namespace: str, command: str, args: dict) -> int:
+        handler = self.registry.get_handler(namespace, command)
+        if handler is None:
+            print(f"Error: Unknown command '{namespace} {command}'", file=sys.stderr)
+            return 1
+        try:
+            result = handler(args)
+            if hasattr(result, "__await__"):
+                await result
+            return 0
+        except Exception as e:
+            print(f"Error executing command: {e}", file=sys.stderr)
+            return 1
+
     def parse(self, args: list[str] | None = None) -> tuple[str, str, dict] | None:
         if args is None:
             args = sys.argv[1:]
-        
+
         parsed, unknown = self._parser.parse_known_args(args)
 
         if parsed.version:
@@ -107,20 +133,6 @@ class CLIApp:
         kwargs = {"_args": cmd_args}
 
         return (namespace, name, kwargs)
-
-    async def execute(self, namespace: str, command: str, args: dict) -> int:
-        handler = self.registry.get_handler(namespace, command)
-        if handler is None:
-            print(f"Error: Unknown command '{namespace} {command}'", file=sys.stderr)
-            return 1
-        try:
-            result = handler(args)
-            if hasattr(result, "__await__"):
-                await result
-            return 0
-        except Exception as e:
-            print(f"Error executing command: {e}", file=sys.stderr)
-            return 1
 
     def run(self, args: list[str] | None = None) -> int:
         parsed = self.parse(args)
@@ -155,10 +167,14 @@ class CLIApp:
 
 
 class InteractiveMode:
+    _cli = event_bus.create_space("cli")
+
     def __init__(self, cli: CLIApp):
         self.cli = cli
 
+    @_cli.event("interactive")
     async def run(self):
+        """交互模式启动"""
         self.print_welcome()
         while True:
             self.print_prompt()

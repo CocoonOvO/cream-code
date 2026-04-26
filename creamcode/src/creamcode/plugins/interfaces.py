@@ -1,18 +1,20 @@
 from __future__ import annotations
 
-from abc import ABC
-from typing import Any
-
-from ..core.event_bus import event_bus as _event_bus, on as _on
-
 
 class CoreEvents:
-    """核心事件常量表 - 仅开发时参考，运行时无作用"""
+    """核心事件常量表 - 仅开发时参考"""
 
-    APP_STARTING = "app.starting"
-    APP_STARTED = "app.started"
-    APP_SHUTDOWN = "app.shutdown"
-    APP_STOPPED = "app.stopped"
+    LIFECYCLE_START = "lifecycle.start"
+    LIFECYCLE_STOP = "lifecycle.stop"
+
+    PLUGIN_LOAD = "plugin.load"
+    PLUGIN_UNLOAD = "plugin.unload"
+    PLUGIN_ENABLE = "plugin.enable"
+    PLUGIN_DISABLE = "plugin.disable"
+
+    CLI_START = "cli.start"
+    CLI_COMMAND = "cli.command"
+    CLI_INTERACTIVE = "cli.interactive"
 
     SESSION_START = "session.start"
     SESSION_END = "session.end"
@@ -29,22 +31,17 @@ class CoreEvents:
     TOOL_CALL = "tool.call"
     TOOL_RESULT = "tool.result"
 
-    PLUGIN_LOADED = "plugin.loaded"
-    PLUGIN_ENABLED = "plugin.enabled"
-    PLUGIN_DISABLED = "plugin.disabled"
-    PLUGIN_UNLOADED = "plugin.unloaded"
-
 
 class ServiceRegistry:
     """服务注册表"""
 
     def __init__(self):
-        self._services: dict[str, Any] = {}
+        self._services: dict[str, object] = {}
 
-    def register(self, name: str, service: Any) -> None:
+    def register(self, name: str, service: object) -> None:
         self._services[name] = service
 
-    def get(self, name: str) -> Any | None:
+    def get(self, name: str) -> object | None:
         return self._services.get(name)
 
     def list_services(self) -> list[str]:
@@ -56,35 +53,10 @@ class PluginContext:
 
     def __init__(
         self,
-        event_bus: Any,
-        config: dict[str, Any],
+        event_bus: object,
+        config: dict,
         services: ServiceRegistry,
     ):
         self.event_bus = event_bus
         self.config = config
         self.services = services
-
-
-class Plugin(ABC):
-    """插件基类"""
-
-    name: str = ""
-    version: str = "0.1.0"
-    priority: int = 0
-    depends_on: list[str] = []
-
-    _context: PluginContext | None = None
-    _enabled: bool = False
-
-    async def on_load(self, context: PluginContext) -> None:
-        self._context = context
-
-    async def on_enable(self) -> None:
-        self._enabled = True
-
-    async def on_disable(self) -> None:
-        self._enabled = False
-
-    async def on_unload(self) -> None:
-        self._enabled = False
-        self._context = None

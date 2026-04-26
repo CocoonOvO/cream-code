@@ -24,7 +24,7 @@ class MemorySystemPlugin(Plugin):
     depends_on = []
     description = "Three-level memory system: Working, ShortTerm, LongTerm"
 
-    def __init__(self, event_bus: EventBus):
+    def __init__(self, event_bus=None):
         super().__init__(event_bus)
         self._context_manager: ContextWindowManager | None = None
         self._config: dict[str, Any] = {}

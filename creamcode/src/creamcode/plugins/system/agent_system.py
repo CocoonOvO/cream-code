@@ -20,7 +20,7 @@ class AgentSystemPlugin(Plugin):
     depends_on = []
     description = "Default Agent implementation"
 
-    def __init__(self, event_bus: EventBus):
+    def __init__(self, event_bus=None):
         super().__init__(event_bus)
         self._agent: DefaultAgent | None = None
 

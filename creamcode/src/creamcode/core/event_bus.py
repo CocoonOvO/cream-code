@@ -103,10 +103,9 @@ class EventBus:
         def decorator(func):
             @wraps(func)
             async def wrapper(self, *args, **kwargs):
-                eb = getattr(self, "event_bus", None)
+                eb = getattr(self, "event_bus", None) or event_bus
                 result = await func(self, *args, **kwargs)
-                if eb:
-                    await eb.publish(Event(event_name))
+                await eb.publish(Event(event_name))
                 return result
 
             return wrapper

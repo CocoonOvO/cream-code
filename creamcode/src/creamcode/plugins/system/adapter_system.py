@@ -19,7 +19,7 @@ class AdapterSystemPlugin(Plugin):
     depends_on = []
     description = "Built-in adapters: Anthropic, OpenAI, Ollama, MiniMax"
 
-    def __init__(self, event_bus: EventBus):
+    def __init__(self, event_bus=None):
         super().__init__(event_bus)
         self._registry: AdapterRegistry | None = None
 

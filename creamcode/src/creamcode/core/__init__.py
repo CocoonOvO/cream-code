@@ -1,5 +1,5 @@
 from .lifecycle import LifecycleManager, LifecycleState
-from .event_bus import EventBus
+from .event_bus import EventBus, event_bus, on, Event
 from .plugin_manager import (
     Plugin,
     PluginManager,
@@ -14,17 +14,16 @@ from .cli_framework import (
 )
 
 __all__ = [
-    # Lifecycle
     "LifecycleManager",
     "LifecycleState",
-    # Event Bus
     "EventBus",
-    # Plugin
+    "event_bus",
+    "on",
+    "Event",
     "Plugin",
     "PluginManager",
     "PluginLoadError",
     "PluginDependencyError",
-    # CLI
     "CommandInfo",
     "CLIRegistry",
     "CLIApp",

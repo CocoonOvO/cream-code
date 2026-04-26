@@ -18,7 +18,7 @@ class ToolSystemPlugin(Plugin):
     depends_on = []
     description = "Built-in tools: Bash, File, Web"
 
-    def __init__(self, event_bus: EventBus):
+    def __init__(self, event_bus=None):
         super().__init__(event_bus)
         self._tools_registered = False
 

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import logging
 import importlib
 from pathlib import Path
@@ -13,7 +12,7 @@ from .core.lifecycle import LifecycleManager, LifecycleState
 from .tools.registry import ToolRegistry
 from .memory.context import ContextWindowManager
 from .adapters.registry import AdapterRegistry
-from .types import Event, PluginType
+from .types import PluginType
 
 
 class Application:
@@ -23,10 +22,10 @@ class Application:
     负责初始化和协调所有子系统:
     - EventBus: 事件通信核心
     - PluginManager: 插件管理
-    - ToolRegistry: 工具注册表 (通过 ToolSystemPlugin)
-    - Memory System: 三级记忆系统 (通过 MemorySystemPlugin)
-    - AdapterRegistry: AI 适配器管理 (通过 AdapterSystemPlugin)
-    - Agent: Agent (通过 AgentSystemPlugin)
+    - ToolRegistry: 工具注册表
+    - Memory System: 三级记忆系统
+    - AdapterRegistry: AI 适配器管理
+    - Agent: Agent
     """
 
     VERSION = "0.1.0"
@@ -42,12 +41,12 @@ class Application:
         self.config = config or {}
         self._logger = logging.getLogger("creamcode.app")
 
-        self.event_bus: EventBus | None = None
-        self.cli_registry: CLIRegistry | None = None
-        self.plugin_manager: PluginManager | None = None
-        self.tool_registry: ToolRegistry | None = None
-        self.lifecycle: LifecycleManager | None = None
-        self.adapter_registry: AdapterRegistry | None = None
+        self.event_bus = EventBus()
+        self.cli_registry = CLIRegistry()
+        self.tool_registry = ToolRegistry(self.event_bus)
+        self.lifecycle = LifecycleManager()
+        self.adapter_registry = AdapterRegistry(self.event_bus)
+        self.plugin_manager = PluginManager()
         self.context_manager: ContextWindowManager | None = None
         self.agent = None
 
@@ -55,31 +54,19 @@ class Application:
         self._initialized = False
 
     async def initialize(self) -> None:
-        """
-        初始化所有子系统
-        """
+        """初始化所有子系统"""
         if self._initialized:
             self._logger.warning("Application already initialized")
             return
 
         self._logger.info("Initializing creamcode application...")
 
-        self.event_bus = EventBus()
-        self.cli_registry = CLIRegistry()
-        self.tool_registry = ToolRegistry(self.event_bus)
-        self.lifecycle = LifecycleManager()
-        self.adapter_registry = AdapterRegistry(self.event_bus)
-
-        await self.event_bus.subscribe("command.registered", self._on_command_registered)
-        await self.event_bus.subscribe("plugin.commands_registering", self._on_plugin_commands_registering)
-
-        self.plugin_manager = PluginManager(self.event_bus)
+        cli_app = CLIApp(self.cli_registry)
+        await cli_app.initialize()
 
         await self._load_system_plugins()
-
         await self._load_user_plugins()
-
-        await self.lifecycle.on_startup()
+        await self.lifecycle.start()
 
         self._initialized = True
         self._logger.info("creamcode application initialized successfully")
@@ -102,7 +89,7 @@ class Application:
                     self._logger.warning(f"No SYSTEM plugin found in {plugin_module_name}")
                     continue
 
-                plugin_instance = plugin_class(self.event_bus)
+                plugin_instance = plugin_class()
                 await plugin_instance.on_load()
                 await plugin_instance.on_enable()
                 self._system_plugins[plugin_instance.name] = plugin_instance
@@ -116,7 +103,6 @@ class Application:
 
     async def _initialize_components(self) -> None:
         """通过插件初始化各个组件"""
-
         if "tool-system" in self._system_plugins:
             tool_plugin = self._system_plugins["tool-system"]
             if hasattr(tool_plugin, 'register_tools'):
@@ -168,18 +154,6 @@ class Application:
                     except Exception as e:
                         self._logger.error(f"Failed to load plugin from {plugin_file}: {e}")
 
-    async def _on_command_registered(self, event: Event) -> None:
-        """Handle command registration events from plugins"""
-        self._logger.debug(
-            f"Command registered via event: {event.data.get('namespace')}/{event.data.get('name')}"
-        )
-
-    async def _on_plugin_commands_registering(self, event: Event) -> None:
-        """Handle plugin commands registration event - actually register commands to CLI"""
-        plugin = event.data.get("plugin")
-        if plugin and self.cli_registry:
-            plugin.register_commands(self.cli_registry)
-
     def get_system_plugin(self, name: str) -> Plugin | None:
         """获取系统插件"""
         return self._system_plugins.get(name)
@@ -223,15 +197,7 @@ class Application:
         """Shutdown application gracefully"""
         self._logger.info("Shutting down creamcode application...")
 
-        if self.lifecycle:
-            await self.lifecycle.on_shutdown()
-
-        if self.plugin_manager:
-            for plugin_name in list(self.plugin_manager.list_plugins()):
-                try:
-                    await self.plugin_manager.unload_plugin(plugin_name)
-                except Exception as e:
-                    self._logger.error(f"Failed to unload plugin {plugin_name}: {e}")
+        await self.lifecycle.stop()
 
         self._initialized = False
         self._logger.info("creamcode application shutdown complete")
