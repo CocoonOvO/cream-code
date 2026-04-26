@@ -7,8 +7,8 @@ from typing import Any
 
 from .core.event_bus import EventBus
 from .core.cli_framework import CLIRegistry, CLIApp, InteractiveMode
-from .core.plugin_manager import PluginManager, Plugin
-from .core.lifecycle import LifecycleManager, LifecycleState
+from .core.plugin_manager import PluginManager, PluginCommands, Plugin
+from .core.lifecycle import LifecycleManager, LifecycleCommands, LifecycleState
 from .tools.registry import ToolRegistry
 from .memory.context import ContextWindowManager
 from .adapters.registry import AdapterRegistry
@@ -60,6 +60,9 @@ class Application:
             return
 
         self._logger.info("Initializing creamcode application...")
+
+        LifecycleCommands(self.lifecycle).register_to(self.cli_registry)
+        PluginCommands(self.plugin_manager).register_to(self.cli_registry)
 
         cli_app = CLIApp(self.cli_registry)
         await cli_app.initialize()

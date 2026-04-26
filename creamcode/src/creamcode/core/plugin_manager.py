@@ -62,6 +62,38 @@ class Plugin(ABC):
         pass
 
 
+class PluginCommands:
+    """插件管理 CLI 命令"""
+
+    _plugin = event_bus.create_space("plugin")
+
+    def __init__(self, plugin_manager):
+        self._pm = plugin_manager
+
+    @_plugin.event("load")
+    async def load(self, path: str):
+        from pathlib import Path
+        await self._pm.load_plugin(Path(path))
+
+    @_plugin.event("unload")
+    async def unload(self, name: str):
+        await self._pm.unload_plugin(name)
+
+    @_plugin.event("enable")
+    async def enable(self, name: str):
+        await self._pm.enable_plugin(name)
+
+    @_plugin.event("disable")
+    async def disable(self, name: str):
+        await self._pm.disable_plugin(name)
+
+    def register_to(self, cli_registry):
+        cli_registry.register("plugin", "load", self.load, "core")
+        cli_registry.register("plugin", "unload", self.unload, "core")
+        cli_registry.register("plugin", "enable", self.enable, "core")
+        cli_registry.register("plugin", "disable", self.disable, "core")
+
+
 class PluginManager:
     """
     插件管理器

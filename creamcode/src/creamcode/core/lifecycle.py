@@ -6,6 +6,27 @@ from ..types import LifecycleState
 from .event_bus import event_bus
 
 
+class LifecycleCommands:
+    """生命周期 CLI 命令"""
+
+    _lifecycle = event_bus.create_space("lifecycle")
+
+    def __init__(self, lifecycle_manager):
+        self._lm = lifecycle_manager
+
+    @_lifecycle.event("start")
+    async def start(self):
+        await self._lm.start()
+
+    @_lifecycle.event("stop")
+    async def stop(self):
+        await self._lm.stop()
+
+    def register_to(self, cli_registry):
+        cli_registry.register("lifecycle", "start", self.start, "core")
+        cli_registry.register("lifecycle", "stop", self.stop, "core")
+
+
 class LifecycleManager:
     """生命周期管理器"""
 
